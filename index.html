@@ -104,10 +104,10 @@
             <!-- Row 3: Health & Stress -->
             <div class="row-health card">
                 <h2><i data-lucide="activity"></i> Health & Stress</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px;">
-                    <!-- Stress Tracks -->
-                    <div>
-                        <div style="margin-bottom: 20px;">
+                <div class="health-container">
+                    <!-- Stress Tracks Row -->
+                    <div class="stress-row">
+                        <div class="stress-group">
                             <label>Physical Stress</label>
                             <div class="stress-track" id="physical-stress">
                                 <div class="stress-box" onclick="toggleStress(this)">1</div>
@@ -116,7 +116,7 @@
                                 <div class="stress-box" onclick="toggleStress(this)">4</div>
                             </div>
                         </div>
-                        <div>
+                        <div class="stress-group">
                             <label>Mental Stress</label>
                             <div class="stress-track" id="mental-stress">
                                 <div class="stress-box" onclick="toggleStress(this)">1</div>
@@ -127,17 +127,17 @@
                         </div>
                     </div>
 
-                    <!-- Consequences -->
-                    <div>
+                    <!-- Consequences Row -->
+                    <div class="consequences-section">
                         <label>Consequences</label>
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <div class="form-group" style="margin-bottom: 5px;">
+                        <div class="consequences-row">
+                            <div class="form-group">
                                 <input type="text" name="con-mild" placeholder="Mild (2)">
                             </div>
-                            <div class="form-group" style="margin-bottom: 5px;">
+                            <div class="form-group">
                                 <input type="text" name="con-mod" placeholder="Moderate (4)">
                             </div>
-                            <div class="form-group" style="margin-bottom: 5px;">
+                            <div class="form-group">
                                 <input type="text" name="con-sev" placeholder="Severe (6)">
                             </div>
                         </div>

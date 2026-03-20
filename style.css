@@ -201,7 +201,40 @@ input:focus, textarea:focus {
     flex: 1;
 }
 
-/* Stress & Fate */
+/* Health & Stress */
+.health-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.stress-row {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.stress-group {
+    flex: 1;
+    min-width: 250px;
+}
+
+.consequences-section {
+    width: 100%;
+}
+
+.consequences-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.consequences-row .form-group {
+    flex: 1;
+    min-width: 200px;
+    margin-bottom: 0;
+}
+
 .stress-track { display: flex; gap: 10px; }
 .stress-box {
     width: 40px;
