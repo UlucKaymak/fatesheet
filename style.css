@@ -246,12 +246,18 @@ input:focus, textarea:focus {
     justify-content: center;
     cursor: pointer;
     font-weight: bold;
+    transition: all 0.2s;
+}
+
+.stress-box.high-stress {
+    opacity: 0.4;
 }
 
 .stress-box.checked {
     background: var(--primary);
     color: white;
     border-color: var(--primary);
+    opacity: 1;
 }
 
 .fate-points { display: flex; gap: 8px; flex-wrap: wrap; }
