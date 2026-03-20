@@ -226,7 +226,7 @@
                 for(let i=0; i<tier.slots; i++) {
                     const slot = document.createElement('div');
                     slot.className = i < tier.active ? 'skill-slot' : 'skill-slot inactive';
-                    slot.textContent = 'Click to select';
+                    slot.textContent = 'Empty';
                     slot.onclick = () => openSkillModal(slot);
                     slotsDiv.appendChild(slot);
                 }
@@ -377,10 +377,11 @@
             const slots = document.querySelectorAll('.skill-slot');
             usedSkills.clear();
             char.skills.forEach((s, i) => {
-                slots[i].textContent = s;
-                if(s !== 'Empty') {
+                const skillName = (s && s.trim()) ? s : 'Empty';
+                slots[i].textContent = skillName;
+                if(skillName !== 'Empty') {
                     slots[i].classList.add('filled');
-                    usedSkills.add(s);
+                    usedSkills.add(skillName);
                 } else {
                     slots[i].classList.remove('filled');
                 }
