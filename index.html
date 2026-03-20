@@ -350,7 +350,7 @@
                 const div = document.createElement('div');
                 div.className = 'character-item';
                 div.innerHTML = `
-                    <span><b>${char.name}</b> <br><small>${new Date(char.updatedAt).toLocaleDateString()}</small></span>
+                    <span><b>${char.name}</b> <br><small>${new Date(char.updatedAt).toLocaleString()}</small></span>
                     <div>
                         <button class="btn btn-primary" style="width:auto; display:inline;" onclick="loadCharacter('${id}')">Load</button>
                         <button class="btn btn-secondary" style="width:auto; display:inline; color:red;" onclick="deleteCharacter('${id}')">X</button>
