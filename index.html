@@ -14,6 +14,12 @@
         <div class="header-bar">
             <h1><i data-lucide="shield"></i> FateSheet</h1>
             <div class="header-actions">
+                <a href="http://fate-srd.com/" target="_blank" class="icon-btn" title="Fate SRD">
+                    <i data-lucide="book"></i>
+                </a>
+                <a href="https://matita.github.io/fatedice/" target="_blank" class="icon-btn" title="Fate Dice">
+                    <i data-lucide="dices"></i>
+                </a>
                 <button class="icon-btn load" onclick="openCharacterManager()" title="Load">
                     <i data-lucide="folder-open"></i>
                 </button>
@@ -332,8 +338,8 @@
             });
 
             if(res.ok) {
-                alert('Saved to Cloud!');
                 closeModals();
+                alert('Saved to Cloud!');
             }
         }
 
