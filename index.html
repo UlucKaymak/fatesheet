@@ -14,20 +14,14 @@
         <div class="header-bar">
             <h1><i data-lucide="shield"></i> FateSheet</h1>
             <div class="header-actions">
-                <a href="http://fate-srd.com/" target="_blank" class="icon-btn" title="Fate SRD">
-                    <i data-lucide="book"></i>
-                </a>
+                <button class="icon-btn" onclick="toggleDarkMode()" title="Toggle Dark Mode" id="dark-mode-toggle">
+                    <i data-lucide="moon"></i>
+                </button>
                 <a href="https://matita.github.io/fatedice/" target="_blank" class="icon-btn" title="Fate Dice">
                     <i data-lucide="dices"></i>
                 </a>
-                <button class="icon-btn load" onclick="openCharacterManager()" title="Load">
-                    <i data-lucide="folder-open"></i>
-                </button>
-                <button class="icon-btn save" onclick="openSaveModal()" title="Save">
-                    <i data-lucide="save"></i>
-                </button>
-                <button class="icon-btn" onclick="exportCurrentCharacter()" title="Export">
-                    <i data-lucide="download"></i>
+                <button class="icon-btn" onclick="openCharacterManager()" title="Manage Characters">
+                    <i data-lucide="users"></i>
                 </button>
             </div>
         </div>
@@ -160,21 +154,23 @@
     <!-- Modals -->
     <div class="modal-backdrop" id="modal-backdrop" onclick="closeModals()"></div>
     
-    <!-- Save Modal -->
-    <div class="modal" id="save-modal">
-        <h3>Save Character</h3>
-        <div class="form-group">
-            <label>Confirm Name</label>
-            <input type="text" id="save-name-input">
-        </div>
-        <button class="btn btn-primary" onclick="confirmSave()">Save to Cloud</button>
-        <button class="btn btn-secondary" onclick="closeModals()">Cancel</button>
-    </div>
-
     <!-- Manager Modal -->
     <div class="modal" id="manager-modal">
-        <h3>Load Character</h3>
-        <div id="character-list"></div>
+        <h3>Character Manager</h3>
+        
+        <div style="background: var(--bg); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <div class="form-group">
+                <label>Character Name</label>
+                <input type="text" id="save-name-input" placeholder="Character Name">
+            </div>
+            <button class="btn btn-primary" onclick="confirmSave()" style="margin-top: 0;">
+                <i data-lucide="save" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;"></i> Save Current
+            </button>
+        </div>
+
+        <label>Saved Characters</label>
+        <div id="character-list" style="margin-top: 10px;"></div>
+        
         <button class="btn btn-secondary" onclick="closeModals()">Close</button>
     </div>
 
@@ -202,11 +198,36 @@
 
         // Init
         document.addEventListener('DOMContentLoaded', async () => {
+            initDarkMode();
             lucide.createIcons();
             buildSkills();
             updateRefresh();
             await loadFromCloud();
         });
+
+        // Dark Mode Logic
+        function initDarkMode() {
+            const savedDarkMode = localStorage.getItem('dark-mode') === 'true';
+            if (savedDarkMode) {
+                document.body.classList.add('dark-mode');
+                updateDarkModeIcon(true);
+            }
+        }
+
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            localStorage.setItem('dark-mode', isDark);
+            updateDarkModeIcon(isDark);
+        }
+
+        function updateDarkModeIcon(isDark) {
+            const btn = document.getElementById('dark-mode-toggle');
+            if (!btn) return;
+            btn.innerHTML = isDark ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+            if (window.lucide) lucide.createIcons();
+        }
 
         function buildSkills() {
             const container = document.getElementById('skills-container');
@@ -268,13 +289,8 @@
             document.querySelectorAll('.modal, .modal-backdrop').forEach(m => m.style.display = 'none');
         }
 
-        function openSaveModal() {
-            document.getElementById('save-name-input').value = document.getElementById('character-name').value;
-            document.getElementById('modal-backdrop').style.display = 'block';
-            document.getElementById('save-modal').style.display = 'block';
-        }
-
         function openCharacterManager() {
+            document.getElementById('save-name-input').value = document.getElementById('character-name').value;
             renderCharacterList();
             document.getElementById('modal-backdrop').style.display = 'block';
             document.getElementById('manager-modal').style.display = 'block';
@@ -405,16 +421,6 @@
                 body: JSON.stringify(savedCharacters)
             });
             renderCharacterList();
-        }
-
-        function exportCurrentCharacter() {
-            const data = JSON.stringify(savedCharacters, null, 2);
-            const blob = new Blob([data], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'fate_characters.json';
-            a.click();
         }
     </script>
 </body>
