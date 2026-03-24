@@ -247,32 +247,54 @@
 
             try {
                 const { PDFDocument } = PDFLib;
+                // Fetch template and font in parallel
                 const [pdfBytes, fontBytes] = await Promise.all([
-                    fetch('FateCore-FillableSheet.pdf').then(res => res.arrayBuffer()),
-                    fetch('https://pdf-lib.js.org/assets/ubuntu/Ubuntu-R.ttf').then(res => res.arrayBuffer())
-                ]);
+                    fetch('FateCore-FillableSheet.pdf').then(res => {
+                        if(!res.ok) throw new Error('PDF template not found');
+                        return res.arrayBuffer();
+                    }),
+                    // Stable Caveat Regular from jsDelivr/Google Fonts
+                    fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/caveat/static/Caveat-Regular.ttf')
+                        .then(res => {
+                            if(!res.ok) throw new Error('Font download failed');
+                            return res.arrayBuffer();
+                        })
+                ]).catch(err => {
+                    console.warn('Font loading failed, falling back to standard font:', err);
+                    return [null, null]; // Fallback trigger
+                });
 
-                const pdfDoc = await PDFDocument.load(pdfBytes);
-                pdfDoc.registerFontkit(fontkit);
-                const customFont = await pdfDoc.embedFont(fontBytes);
+                const pdfDoc = await PDFDocument.load(pdfBytes || await fetch('FateCore-FillableSheet.pdf').then(r => r.arrayBuffer()));
+                
+                let customFont;
+                if (fontBytes) {
+                    pdfDoc.registerFontkit(fontkit);
+                    customFont = await pdfDoc.embedFont(fontBytes);
+                } else {
+                    // Fallback to standard Helvetica if custom font fails
+                    customFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                }
+
                 const form = pdfDoc.getForm();
+                const isCustom = !!fontBytes;
 
-                const setField = (name, value, size = 9) => {
+                const setField = (name, value, size = 12) => {
                     try {
                         const field = form.getTextField(name);
-                        // Auto-shrink font size if text is long
-                        let fontSize = size;
-                        if (value && value.length > 20) fontSize = 8;
-                        if (value && value.length > 40) fontSize = 7;
-                        if (value && value.length > 60) fontSize = 6;
+                        let fontSize = isCustom ? size : size - 2; // Standard fonts are usually larger
+                        
+                        if (value && value.length > 20) fontSize -= 1;
+                        if (value && value.length > 35) fontSize -= 2;
+                        if (value && value.length > 55) fontSize -= 2;
                         
                         field.setText(value || '');
-                        field.setFontSize(fontSize);
+                        field.setFontSize(Math.max(fontSize, 6));
                         
                         try { field.setAlignment(PDFLib.TextAlignment.Left); } catch(e) {}
                         try { field.updateAppearances(customFont); } catch(e) {}
                     } catch(e) {}
                 };
+                // ... rest of mapping
 
                 setField('CharacterName', document.getElementById('character-name').value);
                 setField('HighConcept', document.querySelector('[name="high-concept"]').value);
