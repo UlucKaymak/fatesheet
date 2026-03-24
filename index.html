@@ -11,6 +11,8 @@
     <meta property="og:image" content="/apps/fate-sheet/manifest.json">
 
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/@pdf-lib/fontkit@0.0.4/dist/fontkit.umd.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -20,6 +22,9 @@
         <div class="header-bar">
             <h1><i data-lucide="shield"></i> FateSheet</h1>
             <div class="header-actions">
+                <button class="icon-btn" onclick="downloadPDF()" title="Download PDF">
+                    <i data-lucide="download"></i>
+                </button>
                 <button class="icon-btn" onclick="toggleDarkMode()" title="Toggle Dark Mode" id="dark-mode-toggle">
                     <i data-lucide="moon"></i>
                 </button>
@@ -45,7 +50,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="form-group">
                             <label>Campaign</label>
-                            <input type="text" name="campaign">
+                            <input type="text" name="campaign" id="campaign">
                         </div>
                         <div class="form-group">
                             <label>Player</label>
@@ -75,7 +80,7 @@
             <!-- Row 2: Aspects Partition -->
             <div class="card">
                 <h2><i data-lucide="sparkles"></i> Aspects</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <div style="display: flex; flex-direction: column; gap: 15px;">
                     <div class="form-group">
                         <label>High Concept</label>
                         <input type="text" name="high-concept" placeholder="Core identity">
@@ -107,7 +112,19 @@
                 </div>
             </div>
 
-            <!-- Row 3: Health & Stress -->
+            <!-- Row 4: Stunts & Extras -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div class="card">
+                    <h2><i data-lucide="zap"></i> Stunts</h2>
+                    <textarea name="stunts" placeholder="Special abilities..." style="width: 100%; min-height: 150px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: inherit; resize: vertical;"></textarea>
+                </div>
+                <div class="card">
+                    <h2><i data-lucide="package"></i> Extras</h2>
+                    <textarea name="extras" placeholder="Gear, companions, organizations..." style="width: 100%; min-height: 150px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: inherit; resize: vertical;"></textarea>
+                </div>
+            </div>
+
+            <!-- Row 5: Health & Stress -->
             <div class="row-health card">
                 <h2><i data-lucide="activity"></i> Health & Stress</h2>
                 <div class="health-container">
@@ -145,6 +162,9 @@
                                 <input type="text" name="con-mild" placeholder="Mild (2)">
                             </div>
                             <div class="form-group">
+                                <input type="text" name="con-mild-text" placeholder="Mild (2)" style="width: 100%;">
+                            </div>
+                            <div class="form-group">
                                 <input type="text" name="con-mod" placeholder="Moderate (4)">
                             </div>
                             <div class="form-group">
@@ -152,6 +172,22 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Row 6: Inventory & Notes -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div class="card">
+                    <h2><i data-lucide="shopping-bag"></i> Inventory</h2>
+                    <textarea name="inventory" placeholder="Carried items..." style="width: 100%; min-height: 150px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: inherit; resize: vertical;"></textarea>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>Currency</label>
+                        <input type="text" name="currency">
+                    </div>
+                </div>
+                <div class="card">
+                    <h2><i data-lucide="sticky-note"></i> Adventure Notes</h2>
+                    <textarea name="notes" placeholder="Session logs, NPCs, clues..." style="width: 100%; min-height: 150px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
             </div>
         </div>
@@ -191,16 +227,134 @@
         // Data & State
         const SKILLS_LIST = ['Athletics', 'Burglary', 'Contacts', 'Crafts', 'Deceive', 'Drive', 'Empathy', 'Fight', 'Investigate', 'Lore', 'Notice', 'Physique', 'Provoke', 'Rapport', 'Resources', 'Shoot', 'Stealth', 'Will'];
         const TIERS = [
-            { label: 'Superb (+5)', slots: 5, active: 0, bonus: '+5' },
-            { label: 'Great (+4)', slots: 5, active: 1, bonus: '+4' },
-            { label: 'Good (+3)', slots: 5, active: 2, bonus: '+3' },
-            { label: 'Fair (+2)', slots: 5, active: 3, bonus: '+2' },
-            { label: 'Average (+1)', slots: 5, active: 4, bonus: '+1' }
+            { label: 'Superb (+5)', slots: 5, active: 5, bonus: '+5', fields: ['Superb 5', '2', '2_2', '2_2a', '2_3'] },
+            { label: 'Great (+4)', slots: 5, active: 5, bonus: '+4', fields: ['Great 4', '1_4', '1_5', '1_5a', '1_7'] },
+            { label: 'Good (+3)', slots: 5, active: 5, bonus: '+3', fields: ['Good 3', '2_4', '2_5', '1_6', '2_7'] },
+            { label: 'Fair (+2)', slots: 5, active: 5, bonus: '+2', fields: ['Fair 2', '3', '3_2', '2_6', '3_4'] },
+            { label: 'Average (+1)', slots: 5, active: 5, bonus: '+1', fields: ['Average 1', '4', '4_2', '3_3', '4_3'] }
         ];
 
         let savedCharacters = {};
         let activeSlot = null;
         let usedSkills = new Set();
+
+        // Download PDF
+        async function downloadPDF() {
+            const btn = document.querySelector('button[onclick="downloadPDF()"]');
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader" class="spin" style="width:16px; height:16px;"></i>';
+            if(window.lucide) lucide.createIcons();
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const [pdfBytes, fontBytes] = await Promise.all([
+                    fetch('FateCore-FillableSheet.pdf').then(res => res.arrayBuffer()),
+                    fetch('https://pdf-lib.js.org/assets/ubuntu/Ubuntu-R.ttf').then(res => res.arrayBuffer())
+                ]);
+
+                const pdfDoc = await PDFDocument.load(pdfBytes);
+                pdfDoc.registerFontkit(fontkit);
+                const customFont = await pdfDoc.embedFont(fontBytes);
+                const form = pdfDoc.getForm();
+
+                const setField = (name, value, size = 9) => {
+                    try {
+                        const field = form.getTextField(name);
+                        // Auto-shrink font size if text is long
+                        let fontSize = size;
+                        if (value && value.length > 25) fontSize = 8;
+                        if (value && value.length > 45) fontSize = 7;
+                        if (value && value.length > 65) fontSize = 6;
+                        
+                        field.setText(value || '');
+                        field.setFontSize(fontSize);
+                        
+                        // Try to center text vertically if the library supports it via appearance
+                        try { 
+                            field.setAlignment(PDFLib.TextAlignment.Center);
+                        } catch(e) {}
+
+                        try { field.updateAppearances(customFont); } catch(e) {}
+                    } catch(e) {}
+                };
+
+                setField('CharacterName', document.getElementById('character-name').value);
+                setField('HighConcept', document.querySelector('[name="high-concept"]').value);
+                setField('Trouble', document.querySelector('[name="trouble"]').value);
+                setField('Refresh', document.getElementById('refresh-input').value);
+                
+                // Campaign & Player
+                setField('Description', document.getElementById('campaign').value); 
+                setField('bcha046', document.querySelector('[name="player-name"]').value);
+
+                // Aspects 3-5 (Description only)
+                setField('CustomAspect1Descr', document.querySelector('[name="aspect-3"]').value);
+                setField('CustomAspect2Descr', document.querySelector('[name="aspect-4"]').value);
+                setField('CustomAspect3Descr', document.querySelector('[name="aspect-5"]').value);
+
+                const slots = document.querySelectorAll('.skill-tier');
+                TIERS.forEach((tier, tIdx) => {
+                    const tierDiv = slots[tIdx];
+                    if (!tierDiv) return;
+                    const skillSlots = tierDiv.querySelectorAll('.skill-slot:not(.inactive)');
+                    skillSlots.forEach((slot, sIdx) => {
+                        const skillName = slot.textContent;
+                        if (skillName && skillName !== 'Empty') {
+                            const fieldName = tier.fields[sIdx];
+                            if (fieldName) setField(fieldName, skillName);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('#physical-stress .stress-box').forEach((box, i) => {
+                    try {
+                        const f = form.getField(`PhysicalStress${i+1}`);
+                        if (box.classList.contains('checked')) {
+                            if (f.constructor.name === 'PDFCheckBox') f.check();
+                            else f.setText('X');
+                        }
+                    } catch (e) {}
+                });
+
+                document.querySelectorAll('#mental-stress .stress-box').forEach((box, i) => {
+                    try {
+                        const f = form.getField(`MentalStress${i+1}`);
+                        if (box.classList.contains('checked')) {
+                            if (f.constructor.name === 'PDFCheckBox') f.check();
+                            else f.setText('X');
+                        }
+                    } catch (e) {}
+                });
+
+                setField('CONSEQUENCES 1', document.querySelector('[name="con-mild"]').value + " " + (document.querySelector('[name="con-mild-text"]').value || ''));
+                setField('CONSEQUENCES 2', document.querySelector('[name="con-mod"]').value);
+                setField('CONSEQUENCES 3', document.querySelector('[name="con-sev"]').value);
+
+                // Stunts & Extras
+                setField('STUNTS', document.querySelector('[name="stunts"]').value, 8);
+                setField('EXTRAS', document.querySelector('[name="extras"]').value, 8);
+
+                // Inventory & Currency
+                setField('Inventory', document.querySelector('[name="inventory"]').value, 8);
+                setField('Currency', document.querySelector('[name="currency"]').value);
+
+                // Bio & Notes
+                setField('AdventureNotes', document.querySelector('[name="notes"]').value, 8);
+
+                const pdfResultBytes = await pdfDoc.save();
+                const blob = new Blob([pdfResultBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${document.getElementById('character-name').value || 'FateCharacter'}.pdf`;
+                link.click();
+            } catch (error) {
+                console.error(error);
+                alert('PDF support error. Check your connection or special characters.');
+            } finally {
+                btn.innerHTML = originalIcon;
+                if(window.lucide) lucide.createIcons();
+            }
+        }
 
         // Init
         document.addEventListener('DOMContentLoaded', async () => {
@@ -330,7 +484,9 @@
             try {
                 const res = await fetch('/api/characters');
                 if(res.ok) savedCharacters = await res.json();
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                // Quietly fail for local development or missing functions
+            }
         }
 
         async function confirmSave() {
@@ -388,12 +544,17 @@
 
         function loadCharacter(id) {
             const char = savedCharacters[id];
+            
+            // First pass for all generic inputs/textareas
             Object.entries(char.fields).forEach(([name, val]) => {
                 const el = document.querySelector(`[name="${name}"]`);
                 if(el) el.value = val;
             });
             
-            document.getElementById('refresh-input').value = char.refresh;
+            // Second pass for specific IDs or special cases
+            if (char.fields['campaign']) document.getElementById('campaign').value = char.fields['campaign'];
+
+            document.getElementById('refresh-input').value = char.refresh || 3;
             updateRefresh();
 
             const slots = document.querySelectorAll('.skill-slot');
