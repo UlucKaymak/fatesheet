@@ -22,7 +22,7 @@
         <div class="header-bar">
             <h1><i data-lucide="shield"></i></h1>
             <div class="header-actions">
-                <button class="icon-btn" onclick="downloadPDF()" title="Download PDF">
+                <button class="icon-btn" onclick="downloadPDF()" title="Download PDF" style="display: none;">
                     <i data-lucide="download"></i>
                 </button>
                 <button class="icon-btn" onclick="toggleDarkMode()" title="Toggle Dark Mode" id="dark-mode-toggle">
@@ -247,51 +247,56 @@
 
             try {
                 const { PDFDocument } = PDFLib;
-                // Fetch template and font in parallel
-                const [pdfBytes, fontBytes] = await Promise.all([
-                    fetch('FateCore-FillableSheet.pdf').then(res => {
-                        if(!res.ok) throw new Error('PDF template not found');
-                        return res.arrayBuffer();
-                    }),
-                    // Stable Caveat Regular from jsDelivr/Google Fonts
-                    fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/caveat/static/Caveat-Regular.ttf')
-                        .then(res => {
-                            if(!res.ok) throw new Error('Font download failed');
-                            return res.arrayBuffer();
-                        })
-                ]).catch(err => {
-                    console.warn('Font loading failed, falling back to standard font:', err);
-                    return [null, null]; // Fallback trigger
-                });
+                // Load font locally (now guaranteed to exist)
+                let fontBytes = null;
+                try {
+                    const res = await fetch('IndieFlower.ttf');
+                    if (res.ok) fontBytes = await res.arrayBuffer();
+                    else throw new Error('Local font fetch failed');
+                } catch (e) {
+                    console.warn('Local font failed, trying CDN fallback...', e);
+                    try {
+                        const cdnRes = await fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/indieflower/IndieFlower-Regular.ttf');
+                        if (cdnRes.ok) fontBytes = await cdnRes.arrayBuffer();
+                    } catch(e2) { console.error('All font sources failed'); }
+                }
 
-                const pdfDoc = await PDFDocument.load(pdfBytes || await fetch('FateCore-FillableSheet.pdf').then(r => r.arrayBuffer()));
+                const pdfBytes = await fetch('FateCore-FillableSheet.pdf').then(res => res.arrayBuffer());
+                const pdfDoc = await PDFDocument.load(pdfBytes);
                 
-                let customFont;
+                let customFont = null;
                 if (fontBytes) {
                     pdfDoc.registerFontkit(fontkit);
                     customFont = await pdfDoc.embedFont(fontBytes);
                 } else {
-                    // Fallback to standard Helvetica if custom font fails
                     customFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 }
 
                 const form = pdfDoc.getForm();
-                const isCustom = !!fontBytes;
 
-                const setField = (name, value, size = 12) => {
+                const setField = (name, value, size = 13) => {
                     try {
                         const field = form.getTextField(name);
-                        let fontSize = isCustom ? size : size - 2; // Standard fonts are usually larger
+                        let textValue = value || '';
                         
-                        if (value && value.length > 20) fontSize -= 1;
-                        if (value && value.length > 35) fontSize -= 2;
-                        if (value && value.length > 55) fontSize -= 2;
+                        // If no custom font, must sanitize to avoid crash
+                        if (!fontBytes) {
+                            textValue = textValue
+                                .replace(/ş/g, 's').replace(/Ş/g, 'S')
+                                .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+                                .replace(/ı/g, 'i').replace(/İ/g, 'I')
+                                .replace(/ç/g, 'c').replace(/Ç/g, 'C')
+                                .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+                                .replace(/ü/g, 'u').replace(/Ü/g, 'U');
+                        }
+
+                        field.setText(textValue);
+                        field.setFontSize(size);
                         
-                        field.setText(value || '');
-                        field.setFontSize(Math.max(fontSize, 6));
-                        
-                        try { field.setAlignment(PDFLib.TextAlignment.Left); } catch(e) {}
-                        try { field.updateAppearances(customFont); } catch(e) {}
+                        if (customFont) {
+                            // This is the key to making the font appear in the PDF
+                            try { field.updateAppearances(customFont); } catch(e) {}
+                        }
                     } catch(e) {}
                 };
                 // ... rest of mapping
