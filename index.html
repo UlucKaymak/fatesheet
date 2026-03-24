@@ -20,7 +20,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header-bar">
-            <h1><i data-lucide="shield"></i> FateSheet</h1>
+            <h1><i data-lucide="shield"></i></h1>
             <div class="header-actions">
                 <button class="icon-btn" onclick="downloadPDF()" title="Download PDF">
                     <i data-lucide="download"></i>
@@ -262,18 +262,14 @@
                         const field = form.getTextField(name);
                         // Auto-shrink font size if text is long
                         let fontSize = size;
-                        if (value && value.length > 25) fontSize = 8;
-                        if (value && value.length > 45) fontSize = 7;
-                        if (value && value.length > 65) fontSize = 6;
+                        if (value && value.length > 20) fontSize = 8;
+                        if (value && value.length > 40) fontSize = 7;
+                        if (value && value.length > 60) fontSize = 6;
                         
                         field.setText(value || '');
                         field.setFontSize(fontSize);
                         
-                        // Try to center text vertically if the library supports it via appearance
-                        try { 
-                            field.setAlignment(PDFLib.TextAlignment.Center);
-                        } catch(e) {}
-
+                        try { field.setAlignment(PDFLib.TextAlignment.Left); } catch(e) {}
                         try { field.updateAppearances(customFont); } catch(e) {}
                     } catch(e) {}
                 };
